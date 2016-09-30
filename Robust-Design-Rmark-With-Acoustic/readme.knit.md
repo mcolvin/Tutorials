@@ -107,7 +107,11 @@ I do not believe the standard error estimates for using both.  I believe they ar
 
 * There seems to be something very off with the acoustic fish that was unexpected.
 * Going to try to work only on acoustic fish
-
+* What I think might be happening is that if you have capture history of 10000, tracking tag detection and no physical
+captures it over estimates  the probability of Observable --> observable (i.e., 1-$\gamma^{\prime\prime}$) and therefore
+$\gamma^{\prime\prime}$ is underestimated
+* First test is to fix $\gamma^{\prime\prime}$ and $\gamma^{\prime}$ to zero in simulated data and in the design matrix to 
+see if that clears up the bias in abundance.
 
 
 

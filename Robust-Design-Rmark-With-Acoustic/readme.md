@@ -82,3 +82,5 @@ Discussion
 
 -   There seems to be something very off with the acoustic fish that was unexpected.
 -   Going to try to work only on acoustic fish
+-   What I think might be happening is that if you have capture history of 10000, tracking tag detection and no physical captures it over estimates the probability of Observable --&gt; observable (i.e., 1-*γ*<sup>′′</sup>) and therefore *γ*<sup>′′</sup> is underestimated
+-   First test is to fix *γ*<sup>′′</sup> and *γ*<sup>′</sup> to zero in simulated data and in the design matrix to see if that clears up the bias in abundance.
