@@ -1,0 +1,307 @@
+---
+title: "Robust design-survival and recruitment"
+author: Michael E. Colvin
+date: 1 September 2016
+output:
+  html_document:
+    theme: flatly
+    highlight: espresso
+    toc: FALSE
+---
+
+
+Some preliminaries.
+
+```{r}
+library(R2jags)
+```
+
+For this idealized (it is very much a best case scenario) there are 5 primary sampling occasions
+and 7 secondary occasions.  
+Additionally we are going to specify the following parameters and try to estimate them:
+
+* Survival (phi; $\phi$) = 0.8
+* Capture probability ($p$) = 0.4
+* Recruitment ($r$) = 0.3
+
+
+Lets assign those for the simulation.
+
+```{r} 
+nprim=5
+nsec<-7
+phi=0.8
+p<-0.4
+r<- 0.3
+```
+One thing the keep in mind is that $\phi$, $r$, and $p$ are assumed to be constant.
+Therefore $\phi$ does not vary among primary sampling occasions and $p$ does not vary among secondary occasions.
+This is a simplifying assumption for this example.
+
+In order to estimate population abundance from recaptures of individuals we need to set up a super population.
+This is a vector of 0s and 1s that assign whether an individual is included in the population.
+Suppose we have a population of 100 individuals. This can be represented as a vector of 100 1s and some zeros.
+Adding the zeros is the 'data augmentation' trick needed to estimate abundance.
+In the super population there are 200 'spots' those 100 individuals can occupy.
+Because there are 100 individuals and 200 slots the 'occupancy' rate is 0.5.
+This is one of the values estimated by the model below we will define it as $\omega$.
+
+```{r}
+# MAKE THE TRUE SUPER POPULATION
+Z<- c(rep(1,100), rep(0,900))
+Z
+```
+We can calculate the super population size by summing Z and $\omega$ as the mean of Z.
+
+```{r}
+super_N_true<- sum(Z)
+omega_true<- mean(Z)
+super_N_true
+omega_true
+```
+
+Now that the super population is defined the time dynamics can play out.
+For this example the super population is the initial population.
+This example does not include any immigration emigration or recruitment.
+I find with this stuff it is best to start basic and add complexity.
+
+I terms of the survival process, it is modelled as the probability of a 1 becoming a 0 between T and T+1.
+This process for individuals can be contained in a matrix that is 200 row long and 5 columns wide.
+The survival process is _conditional_ on being included in the super population.
+Therefore you will see the bottom half of this 200x5 matrix will be all 0s.
+
+To simulate this we first need to set up a 200x5 matrix to hold our 1s and 0s.
+
+```{r}
+ZZ<- matrix(NA,1000,5)
+```
+
+Recall that for this example the super population is the initial population size.
+So we define the first column of ZZ as Z.
+
+```{r}
+ZZ[,1]<- Z
+ZZ
+```
+
+Now that we have the status of our individuals at T=1 defined.
+In ZZ fish assigned a 1 are alive and fish are assigned a 0.
+The 0 assignment is a bit tricky because it can arise from either being dead or not included in the super population.
+But if you know Z, your super population and ZZ you can figure this out.
+For example, if a fish is included in the super population (Z=1) but is assigned a 0 at some point in ZZ it is a death.
+Alternatively if a fish is not in the super population (Z=0) then it can never have a 1 in ZZ.
+This is the idea of 'conditional' survival.
+A fish can only survive if it is in the super population and alive in
+the previous primary occasion (i.e., Z=1 and ZZ[t-1] =1).
+Hence the multiplication of $\phi$ by ZZ to account for whether a
+fish was previously alive and Z that the fish is Included in the super population.
+If a fish was not previously alive or in the super population the probability of surviving is $\phi \cdot 0 \cdot 0$.
+This keeps zombie fish from rising from the dead and curtails spontaneous generation.
+
+So we can simply play these dynamics out using the code below.
+
+```{r}
+for(i in 2:5)
+	{
+	ZZ[,i]<- rbinom(200,1,phi*ZZ[,i-1]*Z)	
+	}
+ZZ
+```
+Now ZZ contains the information that accounts for super population inclusion and the survival process.
+We have effectively modeled the demographic process!
+Lets look at what is playing out.
+
+```{r}
+plot(colSums(ZZ),ylab="Abundance",xlab="Primary occasion",type='b')
+```
+
+The next step is to model the observation process.
+This accounts for our imperfect ability to observe the process we modelled that is contained in the matrix ZZ.
+So there are come conditions to observation here as well.
+The biggie is that we cannot observe a fish that is not present in the super population (Z=0) or that is dead (ZZ=0).
+Given a fish is not there or alive the probability of capturing that fish is 0.
+If a fish is present in the super population and alive it has a probability of being capture equal to $p$.
+If we go out and try to capture fish 7 times (secondary occasions) and the probability of capture is independent
+among occasions (i.e., we are not more or less likely to capture a fish if it has been captured before) this
+capture process can be modelled as a series of 0s and 1s.
+
+Lets go ahead and set an array to hold our data.
+Arrays are basically several matrices, the only hiccup is that they all have to be the same size.
+For this example it works because at every primary occasion we had 7 secondary occasions.
+In real life you will not likely have this and have to fill some columns with missing observations.
+
+
+
+
+
+
+```{r}
+ch<- array(NA,dim=c(200,nsec,nprim))
+dim(ch)
+```
+The code above generates 5 200x7 matrices.
+You get this from the dim statement where 200 represents the number of rows in each matrix, 7 is the number of columns
+and 5 is the number of matrices.
+The first matrix is for primary occasion 1, the second is for primary occasion 2, and so on.
+Now we can model the capture process conditional on inclusion in the super population and being alive.
+
+```{r}
+for(i in 1:nprim)
+	for(j in 1:nsec)
+		{
+		ch[,j,i]<- rbinom(200,1,p*ZZ[,i]*Z)
+		}
+```
+
+Lets look at the capture histories for the first and last 10 individuals on primary occasion 1.
+
+```{r}
+ch[1:10,,1]
+ch[190:200,,1]
+```
+
+You should notice that there are 1s and 0s for the first 10 individuals because they were in the super population
+and alive at the time of sampling.
+However the last 10 individuals were all 0s because they were not included in the super population.
+Instances of individuals that were included in the super population and alive but the capture history was
+all 0s indicated individuals that were present but not captured.
+
+Looking at first 10 for the last primary occasion we see a few capture histories that are all 0s.
+These can either individuals that were present and not captured or individuals that died.
+
+```{r}
+ch[1:10,,5]
+```
+
+Below is a Bayesian state space model that should look very similar to the process that was just simulated.
+One of the major differences is having to do for loops for each individual.
+This is because neither JAGS or BUGS can allocate stochastic values as a vector.
+Stochastic values are defined with the $\sim$ in the code below.
+
+The first code blocks define the process model.
+The second code block defines the observation model.
+The third code block defines derived values like population size and priors for estimated parameters.
+
+```{r}
+mod<- function()
+	{
+	# [1] PROCESS MODEL	
+	## SUPER POPULATION
+	for(j in 1:nind)
+		{
+		Z[j]~dbern(omega) # SUPER POPULATION SIZE, LATENT VARIABLE, DATA AUGMENTATION
+		ZZ[j,1]<-Z[j]
+		}
+	
+	## ABUNDANCE AT EACH OCCASION
+	for(i in 2:nprim)
+		{
+		for(j in 1:nind)
+			{
+			phi[j,i-1]<- (exp(b)/(1+exp(b)))*Z[j]*ZZ[j,i-1]
+			ZZ[j,i]~dbern(phi[j,i-1])
+			}
+		}
+		
+	# [2] OBSERVATION MODEL
+	for(i in 1:nprim)
+		{
+		for(j in 1:nind)
+			{
+			for(k in 1:nsec)
+				{
+				# ASSIGN CAPTURE PROBABILITY TO INDIVIDUALS
+				p[j,k,i]<- (exp(a)/(1+exp(a)))*Z[j]*ZZ[j,i]
+				ch[j,k,i]~dbern(p[j,k,i])	
+				}#k
+			}#i
+		}#j
+
+
+	# [3] DERIVED PARAMETERS AND PRIORS
+	## DERIVED PARAMETERS
+	N<-sum(Z[]) # SUPPER POPULATION
+	for(i in 1:nprim){N_t[i]<- sum(ZZ[,i])}
+	logit(phi_hat)<- b
+	logit(p_hat)<-a
+	## PRIORS
+	omega~dunif(0,1)
+	a~dnorm(0,0.37)
+	b~dnorm(0,0.37)
+    }
+```
+
+To fit this type of model we need to give it some help with the unobserved state variables.
+In this model Z and ZZ are unobserved (AKA latent) variables.
+We do have some information in our capture histories that can give a good starting point for Z and ZZ.
+Specifically, if we captured a fish we know it was alive and has been alive since the start of the sampling.
+
+```{r}
+# INITIAL VALUES FOR ZZ
+ZZ<- as.matrix(apply(ch,c(1,3),sum))# COUNT UP HOW MANY TIMES A FISH WAS CAPTURED
+ZZ[ZZ>0]<-1 # ASSIGN FISH CAPTURED MORE THEN 0 TIMES AS ALIVE
+indx<- which(rowSums(ZZ)>0)# FIGURE OUT WHICH FISH WERE ALIVE
+last<-sapply(indx,function(x) max(which(ZZ[x,]==1)))# FIGURE OUT THE LAST TIME THEY WERE CAPTURED
+# MAKE THE FISH BE ALIVE FROM THE FIRST OCCASION UP TO THE LAST CAPTURE
+for(i in 1:length(indx))
+	{
+	ZZ[indx[i],c(1:last[i])]<-1
+	}
+```
+
+The information contained in ZZ can be aggregated to inform Z.
+Specifically, Z should be 1 if a fish was captured at any point.
+
+```{r}
+Z<-rowSums(ZZ)# HOW MANY OCC WAS A FISH CAPTURED ON
+Z[Z>0]<-1 # IF CAUGHT MORE THAN ONCE INCLUDE IT IN THE SUPER POPULATION
+```
+
+These initial values for the latent variables make initializing the model much easier and convergence go better.
+
+```{r}
+# DEFINE INTIAL VALUES OF ESTIMATED PARAMERTERS AND LATENT VARIABLES
+inits<- function(t)
+	{
+	list(a=-2.5,b=0,omega=0.5,Z=Z,ZZ=ZZ)
+	}
+```
+Once the initialization function is set we can bundle up our data for the model.
+Then define the parameters to keep track of.
+
+```{r}
+dat<- list(nprim=nprim, nind=nrow(ch[,,1]), nsec=nsec,ch=ch)
+params<-c("N_t","omega","phi_hat","p_hat")	
+```
+
+And finally we can run the model and see how it does!
+
+```{r}
+out <- jags(data=dat,
+	inits=inits,
+	parameters=params,	
+	model.file=mod,
+	n.chains = 3,	
+	n.iter = 15000,	
+	n.burnin = 6000, 
+	n.thin=2,
+	working.directory=getwd())
+out
+```
+
+Lets compare the inputs and the estimates.
+
+```{r}
+# SUPER POPULATION INCLUSION
+omega_true
+out$BUGSoutput$mean$omega
+# CONDITAIONAL CAPTURE PROBILITY
+p
+out$BUGSoutput$mean$p_hat 
+# SURVIVAL
+phi
+out$BUGSoutput$mean$phi_hat 
+```
+
+	
+	

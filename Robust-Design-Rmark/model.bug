@@ -1,0 +1,22 @@
+model
+{
+    for (i in 1:n_aug) {
+        for (j in 1:N_sites) {
+            Z[i, j] ~ dbern(omega)
+            p[i, j, 1] <- Z[i, j] * b0
+            p[i, j, 2] <- Z[i, j] * b1 * (1 - y_aug[i, j, 1])
+            p[i, j, 3] <- Z[i, j] * b2 * (1 - y_aug[i, j, 1]) * 
+                (1 - y_aug[i, j, 2])
+            y_aug[i, j, 1] ~ dbern(p[i, j, 1])
+            y_aug[i, j, 2] ~ dbern(p[i, j, 2])
+            y_aug[i, j, 3] ~ dbern(p[i, j, 3])
+        }
+    }
+    for (i in 1:10) {
+        N[i] <- sum(Z[, i])
+    }
+    omega ~ dunif(0.00000E+00, 1)
+    b0 ~ dunif(0.00000E+00, 1)
+    b1 ~ dunif(0.00000E+00, 1)
+    b2 ~ dunif(0.00000E+00, 1)
+}

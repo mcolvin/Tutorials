@@ -1,0 +1,284 @@
+
+   Program  MARK  - Survival Rate Estimation with Capture-Recapture Data
+   gfortran(Win32) Vers. 8.0 Jun 2014   29-Sep-2016 09:16:15    Page  001
+ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ 
+   This version was compiled by GCC version 4.9.2 using the options 
+   -m32 -mtune=generic -march=x86-64 -mthreads -O2 -fimplicit-none -fbounds-check -funroll-loops -ftree-vectorize -fopenmp.
+   This problem will use 2 of 4 possible threads.
+
+
+  INPUT --- proc title ;
+
+     CPU Time in seconds for last procedure was 0.00
+
+
+  INPUT --- proc chmatrix occasions= 35 groups= 1 etype= Robust ICMeans 
+  INPUT --- NoHist hist= 187 ;
+
+  INPUT ---    time  interval 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 
+  INPUT ---    0 0 0 0 0 1 0 0 0 0 0 0 ;
+
+  INPUT ---    glabel(1)=acoustic0;
+
+      Number of unique encounter histories read was 187.
+
+      Number of individual covariates read was 0.
+      Time interval lengths vary and/or not equal to 1.
+
+      Data type number is 7
+      Data type is Robust Design with Full Likelihhood p and c                                                         
+
+     CPU Time in seconds for last procedure was 0.02
+
+  Program  MARK  - Survival Rate Estimation with Capture-Recapture Data
+   gfortran(Win32) Vers. 8.0 Jun 2014   29-Sep-2016 09:16:15    Page  002
+ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ 
+
+
+  INPUT --- proc estimate link=Parm-Specific NOLOOP varest=2ndPart    ;
+
+
+  INPUT --- model={ S(~1)Gamma''(~1)Gamma'(~1)p(~1)c()f0(~session) };
+
+  INPUT ---    group=1 S    rows=4 cols=4 Triang ;
+  INPUT ---        1 1 1 1 ;
+  INPUT ---        1 1 1 ;
+  INPUT ---        1 1 ;
+  INPUT ---        1 ;
+
+  INPUT ---    group=1 Gamma''    rows=4 cols=4 Triang ;
+  INPUT ---        2 2 2 2 ;
+  INPUT ---        2 2 2 ;
+  INPUT ---        2 2 ;
+  INPUT ---        2 ;
+
+  INPUT ---    group=1 Gamma'    rows=3 cols=3 Triang ;
+  INPUT ---        3 3 3 ;
+  INPUT ---        3 3 ;
+  INPUT ---        3 ;
+
+  INPUT ---    group=1 p  Session 1  rows=1 cols=7 Square ;
+  INPUT ---        4 4 4 4 4 4 4 ;
+
+  INPUT ---    group=1 p  Session 2  rows=1 cols=7 Square ;
+  INPUT ---        4 4 4 4 4 4 4 ;
+
+  INPUT ---    group=1 p  Session 3  rows=1 cols=7 Square ;
+  INPUT ---        4 4 4 4 4 4 4 ;
+
+  INPUT ---    group=1 p  Session 4  rows=1 cols=7 Square ;
+  INPUT ---        4 4 4 4 4 4 4 ;
+
+  INPUT ---    group=1 p  Session 5  rows=1 cols=7 Square ;
+  INPUT ---        4 4 4 4 4 4 4 ;
+
+  INPUT ---    group=1 c  Session 1  rows=1 cols=6 Square ;
+  INPUT ---        4 4 4 4 4 4 ;
+
+  INPUT ---    group=1 c  Session 2  rows=1 cols=6 Square ;
+  INPUT ---        4 4 4 4 4 4 ;
+
+  INPUT ---    group=1 c  Session 3  rows=1 cols=6 Square ;
+
+  Program  MARK  - Survival Rate Estimation with Capture-Recapture Data
+   gfortran(Win32) Vers. 8.0 Jun 2014   29-Sep-2016 09:16:15    Page  003
+ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ 
+  INPUT ---        4 4 4 4 4 4 ;
+
+  INPUT ---    group=1 c  Session 4  rows=1 cols=6 Square ;
+  INPUT ---        4 4 4 4 4 4 ;
+
+  INPUT ---    group=1 c  Session 5  rows=1 cols=6 Square ;
+  INPUT ---        4 4 4 4 4 4 ;
+
+  INPUT ---    group=1 f0  Session 1  rows=1 cols=1 Square ;
+  INPUT ---        5 ;
+
+  INPUT ---    group=1 f0  Session 2  rows=1 cols=1 Square ;
+  INPUT ---        6 ;
+
+  INPUT ---    group=1 f0  Session 3  rows=1 cols=1 Square ;
+  INPUT ---        7 ;
+
+  INPUT ---    group=1 f0  Session 4  rows=1 cols=1 Square ;
+  INPUT ---        8 ;
+
+  INPUT ---    group=1 f0  Session 5  rows=1 cols=1 Square ;
+  INPUT ---        9 ;
+
+  INPUT ---    design matrix constraints=9 covariates=9;
+  INPUT ---        1 0 0 0 0 0 0 0 0;
+  INPUT ---        0 1 0 0 0 0 0 0 0;
+  INPUT ---        0 0 1 0 0 0 0 0 0;
+  INPUT ---        0 0 0 1 0 0 0 0 0;
+  INPUT ---        0 0 0 0 1 0 0 0 0;
+  INPUT ---        0 0 0 0 1 1 0 0 0;
+  INPUT ---        0 0 0 0 1 0 1 0 0;
+  INPUT ---        0 0 0 0 1 0 0 1 0;
+  INPUT ---        0 0 0 0 1 0 0 0 1;
+
+  INPUT ---    links=9;
+
+  INPUT ---    Logit;
+
+  INPUT ---    Logit;
+
+  INPUT ---    Logit;
+
+  INPUT ---    Logit;
+
+  INPUT ---    Log;
+
+
+  Program  MARK  - Survival Rate Estimation with Capture-Recapture Data
+   gfortran(Win32) Vers. 8.0 Jun 2014   29-Sep-2016 09:16:15    Page  004
+ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ 
+  INPUT ---    Log;
+
+  INPUT ---    Log;
+
+  INPUT ---    Log;
+
+  INPUT ---    Log;
+
+  INPUT ---    blabel(1)=S:(Intercept);
+
+  INPUT ---    blabel(2)=GammaDoublePrime:(Intercept);
+
+  INPUT ---    blabel(3)=GammaPrime:(Intercept);
+
+  INPUT ---    blabel(4)=p:(Intercept);
+
+  INPUT ---    blabel(5)=f0:(Intercept);
+
+  INPUT ---    blabel(6)=f0:session2;
+
+  INPUT ---    blabel(7)=f0:session3;
+
+  INPUT ---    blabel(8)=f0:session4;
+
+  INPUT ---    blabel(9)=f0:session5;
+
+  INPUT ---    rlabel(1)=S g0 c1 a0 t1;
+
+  INPUT ---    rlabel(2)=Gamma'' g0 c1 a0 t1;
+
+  INPUT ---    rlabel(3)=Gamma' g0 c1 a1 t2;
+
+  INPUT ---    rlabel(4)=p g0 s1 t1;
+
+  INPUT ---    rlabel(5)=f0 g0 a0 s1 t0;
+
+  INPUT ---    rlabel(6)=f0 g0 a0 s2 t0;
+
+  INPUT ---    rlabel(7)=f0 g0 a0 s3 t0;
+
+  INPUT ---    rlabel(8)=f0 g0 a0 s4 t0;
+
+  INPUT ---    rlabel(9)=f0 g0 a0 s5 t0;
+
+ Link Function Used is PARM-SPECIFIC
+
+  Program  MARK  - Survival Rate Estimation with Capture-Recapture Data
+   gfortran(Win32) Vers. 8.0 Jun 2014   29-Sep-2016 09:16:15    Page  005
+ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ 
+
+ Variance Estimation Procedure Used is 2ndPart 
+
+ M(t+1):
+     156    139    108     85     82
+
+
+ -2logL(saturated) = -2353.5097    
+ Effective Sample Size = 1320
+
+ Number of function evaluations was 21 for 9 parameters.
+ Time for numerical optimization was 0.44 seconds.
+ -2logL { S(~1)Gamma''(~1)Gamma'(~1)p(~1)c()f0(~session) } = 1522.0996     
+ Penalty { S(~1)Gamma''(~1)Gamma'(~1)p(~1)c()f0(~session) } = -0.0000000    
+ Gradient { S(~1)Gamma''(~1)Gamma'(~1)p(~1)c()f0(~session) }:
+ -0.2609528E-03  0.000000     0.2166347E-03 0.3004056E-03 0.2255209E-03
+  0.1623597E-03 0.3281205E-04-0.5539736E-04-0.5411897E-04
+ S Vector { S(~1)Gamma''(~1)Gamma'(~1)p(~1)c()f0(~session) }:
+   966.1426      58.12939      34.08749      21.13245      8.746132    
+   6.558057      5.527581      2.152105      1.727797    
+ Time to compute number of parameters was 0.17 seconds.
+   Threshold =  0.2000000E-06     Condition index =  0.1788345E-02     New Threshold =   5.183390    
+ New Guessimate of Estimated Parameters { S(~1)Gamma''(~1)Gamma'(~1)p(~1)c()f0(~session) } = 1          
+ Conditioned S Vector { S(~1)Gamma''(~1)Gamma'(~1)p(~1)c()f0(~session) }:
+   1.000000     0.6016647E-01 0.3528204E-01 0.2187302E-01 0.9052630E-02
+  0.6787876E-02 0.5721289E-02 0.2227524E-02 0.1788345E-02
+ Number of Estimated Parameters { S(~1)Gamma''(~1)Gamma'(~1)p(~1)c()f0(~session) } = 9          
+ DEVIANCE { S(~1)Gamma''(~1)Gamma'(~1)p(~1)c()f0(~session) } = 3875.6093                     
+ DEVIANCE Degrees of Freedom { S(~1)Gamma''(~1)Gamma'(~1)p(~1)c()f0(~session) } = 178            
+ c-hat { S(~1)Gamma''(~1)Gamma'(~1)p(~1)c()f0(~session) } = 21.773086                     
+ AIC { S(~1)Gamma''(~1)Gamma'(~1)p(~1)c()f0(~session) } = 1540.0996                  
+ AICc { S(~1)Gamma''(~1)Gamma'(~1)p(~1)c()f0(~session) } = 1540.2371                    
+ BIC { S(~1)Gamma''(~1)Gamma'(~1)p(~1)c()f0(~session) } = 1586.7681                    
+ Pearson Chisquare { S(~1)Gamma''(~1)Gamma'(~1)p(~1)c()f0(~session) } = 0.4480802E+011             
+
+
+      PARM-SPECIFIC Link Function Parameters of { S(~1)Gamma''(~1)Gamma'(~1)p(~1)c()f0(~session) }
+                                                              95% Confidence Interval
+ Parameter                    Beta         Standard Error      Lower           Upper
+ -------------------------  --------------  --------------  --------------  --------------
+    1:S:(Intercept)         1.7882276       0.1714062       1.4522716       2.1241837     
+    2:GammaDoublePrime:(In  -1.7421488      0.2205294       -2.1743864      -1.3099112    
+    3:GammaPrime:(Intercep  -0.6793149      0.6709991       -1.9944731      0.6358434     
+    4:p:(Intercept)         -0.8165335      0.0384456       -0.8918869      -0.7411801    
+    5:f0:(Intercept)        2.5287536       0.3139506       1.9134104       3.1440968     
+    6:f0:session2           -0.1203456      0.4380005       -0.9788267      0.7381354     
+    7:f0:session3           -0.3859155      0.4739721       -1.3149010      0.5430699     
+    8:f0:session4           -0.6417653      0.5165924       -1.6542865      0.3707558     
+    9:f0:session5           -0.6805470      0.5238334       -1.7072606      0.3461665     
+
+
+      Real Function Parameters of { S(~1)Gamma''(~1)Gamma'(~1)p(~1)c()f0(~session) }
+                                                               95% Confidence Interval
+  Parameter                  Estimate       Standard Error      Lower           Upper
+ --------------------------  --------------  --------------  --------------  --------------
+     1:S g0 c1 a0 t1         0.8567098       0.0210415       0.8103478       0.8932316                           
+     2:Gamma'' g0 c1 a0 t1   0.1490402       0.0279691       0.1020743       0.2125017                           
+     3:Gamma' g0 c1 a1 t2    0.3364142       0.1497936       0.1197844       0.6538132                           
+
+  Program  MARK  - Survival Rate Estimation with Capture-Recapture Data
+   gfortran(Win32) Vers. 8.0 Jun 2014   29-Sep-2016 09:16:15    Page  006
+ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ 
+     4:p g0 s1 t1            0.3065000       0.0081719       0.2907206       0.3227461                           
+     5:f0 g0 a0 s1 t0        12.537870       3.9362718       6.8744645       22.866970                           
+     6:f0 g0 a0 s2 t0        11.116250       3.6979283       5.8910045       20.976222                           
+     7:f0 g0 a0 s3 t0        8.5235941       3.2311256       4.1563502       17.479676                           
+     8:f0 g0 a0 s4 t0        6.5994630       2.8478466       2.9359647       14.834277                           
+     9:f0 g0 a0 s5 t0        6.3484240       2.7947638       2.7822898       14.485367                           
+
+
+                     Estimates of Derived Parameters
+ Population Estimates of { S(~1)Gamma''(~1)Gamma'(~1)p(~1)c()f0(~session) }
+                                                95% Confidence Interval
+ Grp. Sess.     N-hat        Standard Error      Lower           Upper
+ ---- -----  --------------  --------------  --------------  --------------
+   1     1   168.53787       3.9362718       162.87446       178.86697     
+   1     2   150.11625       3.6979283       144.89100       159.97622     
+   1     3   116.52359       3.2311256       112.15635       125.47968     
+   1     4   91.599463       2.8478466       87.935965       99.834277     
+   1     5   88.348424       2.7947638       84.782290       96.485367     
+
+     CPU Time in seconds for last procedure was 0.61
+
+
+  INPUT --- proc stop;
+
+     CPU Time in minutes for this job was 0.01
+
+     Time Start = 09:16:15.419   Time End = 09:16:15.919
+
+     Wall Clock Time in minutes for this job was 0.01
+
+
+          E X E C U T I O N   S U C C E S S F U L 

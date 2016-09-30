@@ -1,0 +1,152 @@
+
+
+
+```{r}
+setwd("C:/Users/mcolvin/Google Drive/Tutorials/Robust-Design-Survival-Recruitment-Emigration")
+library(RMark)
+```
+
+## Parameters for the robust design
+
+* $\phi$ or $S$ is survival
+* $c$ is initial capture probability
+* $p$ is recapture probability
+* $\Gamma$ is the seniority parameter
+* $f_0$ is number of unobserved invdiduals
+* $\gamma^{\prime}$ is the probability of 
+* $\gamma^{\prime\prime}$ is the 
+
+```{r}
+nprim<- 10
+nsec<- floor(runif(nprim,5,10))
+phi	<- rep(0.8,nprim-1)
+
+# CAPTURE PROBABILITY
+p	<- rep(0.3,nprim)
+
+gamma_prime	<- rep(0.3, nprim-1) # pr(unobservable @ t-1  --> unobservable @ t )
+gamma_dblprime<- rep(0.4, nprim-1) # pr(observable @ t-1 --> unobservable  @ t   )
+
+n<- 175 # initial population size
+n_unobservable<- 200 # UNOBSERVABLE
+super_n<- n+n_offsite # SUPER POPULATION (ONSITE + OFFSITE)
+Z<- matrix(0,super_n,nprim)
+Z_observable<- matrix(0,super_n,nprim)
+Z_unobservable<- matrix(0,super_n,nprim)
+Z[1:super_n,1]<-1
+Z_observable[1:n,1]<-1
+Z_unobservable[(n+1):(n+n_unobservable),1]<-1
+
+
+# SURVIVAL,, EMIGRATION, AND MIGRATION
+for(i in 1:super_n) # FOR EACH INDIVIDUAL IN THE SUPER POPULATION
+	{
+	for(j in 2:(nprim)) # FOR PRIMARY OCCASIONS 2:NPRIM
+		{
+		# DOES A FISH SURVIVE, IF IT WAS PREVIOUSLY ALIVE?
+		Z[i,j]<- rbinom(1,1,phi[j-1])*Z[i,j-1]
+
+		prs<-c(
+			# OBSERVABLE[t-1] --> UNOBSERVABLE[t]
+			(1-Z_unobservable[i,j-1])*(gamma_dblprime[j-1]),
+			
+			# OBSERVABLE[t-1] --> OBSERVABLE[t]
+			(1-Z_unobservable[i,j-1])*(1-gamma_dblprime[j-1]),
+			
+			# UNOBSERVABLE[t-1]--> UNOBSERVABLE[t]
+			Z_unobservable[i,j-1]*gamma_prime[j-1],
+			
+			# UNOBSERVABLE[t-1]--> 	OBSERVABLE[t]
+			Z_unobservable[i,j-1]*(1-gamma_prime[j-1]))
+
+		state<-sample(1:4,1,prs,replace=FALSE)
+		if(state==1 & Z[i,j]==1){Z_unobservable[i,j]<- 1}
+		if(state==2 & Z[i,j]==1){Z_observable[i,j]<-1}
+		if(state==3 & Z[i,j]==1){Z_unobservable[i,j]<-1}
+		if(state==4 & Z[i,j]==1){Z_observable[i,j]<-1}
+		}
+	}
+	
+	
+	
+	
+# SIMULATE CAPTURE HISTORY
+## MORE THAN 1 CAPTURE OCCASIONS
+ch<- matrix(0,nrow(Z),sum(nsec))
+avail2Capture<-ch
+## LINK SECONDARY OCCASION TO PRIMARY OCCASION
+primsec<- matrix(cbind(rep(1:nprim,nsec),
+	c(1:sum(nsec))), ncol=2)
+## CAPTURE HISTORY CONDITIONAL ON BEING PRESENT (I.E., NOT EMIGRATED)
+for(i in 1:super_n)
+	{
+	for(j in 1:sum(nsec))
+		{
+		primocc<- primsec[j,1]
+		avail2Capture[i,j]<-Z_observable[i,primsec[j,1]]
+		ch[i,j]<- rbinom(1,1,p[primocc]*avail2Capture[i,j])
+		}
+	}
+	
+## SUBSET OUT FISH THAT ARE NEVER CAPTURED
+ch<- ch[which(apply(ch,1,sum)!=0),]
+
+## NEED THIS FOR RMARK
+ch2<- data.frame(ch=apply(ch,1,paste0,collapse=""),freq=1,stringsAsFactors=FALSE)# prep data for processing
+
+# NEED TO MAKE A MATRIX OF THAT INDICATES THE FIRST OCCASION
+ends<-cumsum(nsec) # last sampling occasion
+occs<- rep(0,sum(nsec))
+occs[ends]<-1# last occasion in primary
+occs<- occs[-length(occs)]# drop last 1 for processing
+rd=process.data(data=ch2, model="Robust", time.intervals=occs)
+rd_ddl<-make.design.data(rd)
+
+S=list(formula=~1)# SURVIVAL
+# SHARE = TRUE TO SET C = P
+p=list(formula=~1,share=TRUE)# CAPTURE PROBABILITY
+f0<- list(formula=~1) # NUMBER NOT ENCOUNTERED
+GammaDoublePrime=list(formula=~1)
+GammaPrime=list(formula=~1)
+fit<-mark(data = rd, 
+	model = "Robust", 
+    time.intervals=time.intervals,
+	model.parameters=list(
+		S=S,
+		GammaDoublePrime=GammaDoublePrime,
+		GammaPrime=GammaPrime,
+		p=p),
+	threads=2,
+	brief=TRUE)
+summary(fit)
+plogis(summary(fit)$beta$estimate)	
+
+
+derived<- fit$results$derived$`N Population Size`
+plot(derived$estimate,
+	pch=19,ylim=c(min(derived$lcl),max(derived$ucl)))
+segments(c(1:length(derived$ucl)),derived$lcl, c(1:length(derived$lcl)),derived$ucl )
+derived<- fit$results$derived$`N Population Size`
+plot(derived$estimate,
+	pch=19,ylim=c(min(derived$lcl),max(derived$ucl)))
+segments(c(1:length(derived$ucl)),derived$lcl, c(1:length(derived$lcl)),derived$ucl )
+cleanup(ask=FALSE)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
