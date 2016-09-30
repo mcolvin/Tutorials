@@ -3,6 +3,8 @@ title: "Robust design-incorporating auxiliary information."
 author: Michael E. Colvin
 date: 30 September 2016
 output:
+  md_document:
+    variant: markdown_github
   html_document:
     theme: flatly
     highlight: espresso
