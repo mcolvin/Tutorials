@@ -1,0 +1,201 @@
+---
+title: "Linear versus general linear models"
+author: Michael E. Colvin
+date: 23 October 2016
+output:
+  html_document:
+    theme: flatly
+    highlight: espresso
+    toc: FALSE
+---
+
+# Overview
+
+# Objectives 
+
+By the end of this tutorial you should be able to:
+
+1. Understand linear models 
+1. Understand interactions in linear models
+2. The effect of varying distributions 
+3. Using model selection for inference
+
+# Background and the data
+
+Despite current debates about which bear is best [1](https://youtu.be/N8d86Kjl1dg), we will be modeling
+ black bear home ranges using a linear model.
+Linear and generalized linear models are essentially the same thing.
+There is a response variable, home range in this case.
+Variability in home range is then explained using a linear combination of covariates.
+Formally, this is expressed as:
+
+$\hat{Y_i} = \beta_{0} + \beta_{1}\cdot X_{i} + \epsilon$
+
+where Y is home range in square kilometers, $\beta_{0} is the model intercept, $\beta_{1} is the
+ effect of covariate $X$ on home range size, $i$ indexes individual bear, and $\epsilon$ is the error.
+The parameter $\epsilon$ is a normally distributed value with mean 0 and some level of variability
+ represented as a standard deviation.  
+Covariates in a linear model can  be categorical (e.g., sex, stage) or continuous (e.g., weight).  
+The model can also include an interaction of covariates.
+For example, suppose bear home range depended on sex and weight.
+
+
+First things first lets look at the data.
+But first we need to read it in.
+
+```{r}
+setwd()
+dat<-read.csv("./dat/homerange-data.csv")
+```
+
+Let's make sure things look good.
+
+```{r}
+head(dat)
+```
+
+and check the types of data that are read in
+
+```{r}
+str(dat)
+```
+
+Everything looks good.
+The sex variable is a factor, as it should be.
+The weight and the home range variable is a numeric.
+
+```{r}
+boxplot(homerange~sex,dat)
+
+hist(dat$homerange)
+```
+Ugggh. That does not look normal to me, but let's go with it and fit a linear model and see what happens.
+
+
+# 1. A basic linear model of a normally distributed variable
+
+
+Let's simulate this process to get a better understanding of linear models and distributions.
+First we need to specify the parameters for the linear model.
+For this example I will specify the following parameters:
+
+* $\beta_{0}$ = 0.5; this will be the average home range of a male bear (see note 1 below)
+* $\beta_{1}
+* $\sigma$ = 1
+
+```{r}
+b0<- 0.5 # intercept
+b1<- 2.3 # effect of sex
+b2<- 0.05 # effect of weight
+```
+
+*Note 1.* R treats categorical variables like sex alphabetically.
+This can be an issue in a linear model when it comes to interpretting the intercept.
+Specifically, for this home range example the intercept ends up being the average home range of a
+ female bear because.
+But, it might be of interest to see the effect of being female and have the intercept represent the
+ average male black bear.
+Now you do not have to do this but it can make interpretation of outputs easier.
+The code below will take the categorical variable and reorder it such that males are first followed
+ by females.
+
+```{r}
+mydat$sex<- format(mydat$sex,levels=c("males","females"))# reorder levels
+class(mydat$sex) # not males are before females in the levels
+
+```
+### Misconceptions and assumptions
+
+Couple of common misconceptions I have run into in the understanding of linear models
+
+1. The covariates need to be normally distributed - *FALSE*
+2. The response variable needs to be normally distributed  - *FALSE* the model residuals do though!
+
+There are some assumptions that need to be addressed though:
+
+1. The response variable is linearly related to the model
+2. The residuals are normally distributed - but this can be modified by assuming different distributions
+3. Distributional variances conform to assumptions
+
+These assumptions can be evaluated by visually inspecting the following plots
+
+1. Plot of response variable (_y_-axis) to predicted variables (_x_-axis)
+2. Plot of residuals (_y_-axis) to predicted variables (_x_-axis)
+
+### Fitting and interpreting the model
+
+The model can be fit by the 'lm()' function in R using the code below.
+
+```{r}
+fit<-lm(homerange~sex+weight,mydat)
+summary(fit) # summary of linear model fit
+confint(fit) # 95% confidence intervals for parameter estimates
+```
+Now that we have a fitted model we can evaluate the assumptions.
+It is usually best to do this before looking at the output.
+R has some built in plots that can be viewed using the code `plot(fit)` but I prefer to do a couple
+ of simple plots to assess model assumptions.
+
+```{r}
+mydat$pred<- fitted(fit) # add predictions to dataset
+mydat$resid<- resid(fit) # add residuals to dataset
+plot(homerange~pred,mydat)
+plot(resid~pred,mydat)
+```
+
+# Distribution-normal, lognormal, and poisson
+
+
+* Normal
+* Log normal
+
+# A linear model with a interaction
+
+Let's add some additional biological realism to this example.  
+Specifically, in this example male bears have larger home ranges than females and the larger bears
+ have larger home ranges.
+
+
+```{r}
+beta_0 <- 0.3 # the intercept
+beta_1 <- 1.2 # the effect of being female
+beta_2 <- 0.3 # the effect of weight 
+beta_3 <- 0.2 # the interaction of sex and weight
+epsilon <- 1 # error 
+
+```
+
+
+# The actual model and data generating code
+
+The example above was simulated using known parameters from the code below.
+Using the code below you can see that true model that generated the dataset was the one that included
+ a sex * weight interaction that allows the effect of weight on homerange to vary by sex.  
+Ideally, model parameter estimates are the same as those used to generate the data, at least close.
+Additionally, the model selection should weight the generating model relatively high relative to
+ competing models.
+
+```{r}
+mydat<-data.frame(
+    sex=c(rep("female",35),rep("male",43),
+    weight=runif(35+43,68,158))
+b0<-
+b1<-
+b2<-
+b3<-
+er<- 0.3
+
+mydat$sex<-factor(mydat$sex, levels=c("male","female"))
+# model matrix
+mm<- model.matrix(~sex+weight+sex:weight,mydat)
+
+mydat$homerange<- mm%*% as.vector(b0,b1,b2,b3)
+mydat$homerange<- mydat$homerange+rnorm(35+43,0,er)
+
+
+
+mydat$homerange<- NA
+mydat[mydat$sex=="male",]$homerange<- b0 + b3*
+mydat[mydat$sex=="female",]$homerange
+
+```
