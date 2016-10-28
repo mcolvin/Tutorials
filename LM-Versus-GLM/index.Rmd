@@ -9,6 +9,14 @@ output:
     toc: FALSE
 ---
 
+
+<!--
+doment
+dome
+domdf
+-->
+
+
 # Overview
 
 # Objectives 
@@ -31,21 +39,21 @@ Formally, this is expressed as:
 
 $\hat{Y_i} = \beta_{0} + \beta_{1}\cdot X_{i} + \epsilon$
 
-where Y is home range in square kilometers, $\beta_{0} is the model intercept, $\beta_{1} is the
+where Y is home range in square kilometers, $\beta_{0}$ is the model intercept, $\beta_{1}$ is the
  effect of covariate $X$ on home range size, $i$ indexes individual bear, and $\epsilon$ is the error.
 The parameter $\epsilon$ is a normally distributed value with mean 0 and some level of variability
  represented as a standard deviation.  
 Covariates in a linear model can  be categorical (e.g., sex, stage) or continuous (e.g., weight).  
 The model can also include an interaction of covariates.
-For example, suppose bear home range depended on sex and weight.
 
 
-First things first lets look at the data.
+Preliminaries done, let's look at the data.
 But first we need to read it in.
 
+
 ```{r}
-setwd()
-dat<-read.csv("./dat/homerange-data.csv")
+setwd('C:/Users/mcolvin/Google Drive/Tutorials/LM-Versus-GLM')
+dat<-read.csv("./output/homerange-data.csv")
 ```
 
 Let's make sure things look good.
@@ -69,41 +77,281 @@ boxplot(homerange~sex,dat)
 
 hist(dat$homerange)
 ```
+
 Ugggh. That does not look normal to me, but let's go with it and fit a linear model and see what happens.
 
 
 # 1. A basic linear model of a normally distributed variable
 
 
-Let's simulate this process to get a better understanding of linear models and distributions.
-First we need to specify the parameters for the linear model.
-For this example I will specify the following parameters:
-
-* $\beta_{0}$ = 0.5; this will be the average home range of a male bear (see note 1 below)
-* $\beta_{1}
-* $\sigma$ = 1
-
-```{r}
-b0<- 0.5 # intercept
-b1<- 2.3 # effect of sex
-b2<- 0.05 # effect of weight
-```
-
-*Note 1.* R treats categorical variables like sex alphabetically.
-This can be an issue in a linear model when it comes to interpretting the intercept.
-Specifically, for this home range example the intercept ends up being the average home range of a
- female bear because.
-But, it might be of interest to see the effect of being female and have the intercept represent the
- average male black bear.
-Now you do not have to do this but it can make interpretation of outputs easier.
-The code below will take the categorical variable and reorder it such that males are first followed
- by females.
+Let's fit the model to some the data.
+Suppose we are interested in evaluating whether female bears have larger or smaller home ranges than
+ male bears.
+Now, I crafted this comparison deliberately to refine some understanding of R and linear models.
+First we need to examine the default way R treats categorical variables, like sex.
+We can figure out which factor is 'first' using the `levels()` function. 
 
 ```{r}
-mydat$sex<- format(mydat$sex,levels=c("males","females"))# reorder levels
-class(mydat$sex) # not males are before females in the levels
-
+levels(dat$sex)
 ```
+
+Female is listed first then male.
+By default, R orders levels of categorical variables alphabetically.
+Let's see how it is treated in a linear model.
+
+```{r}
+fit<-lm(homerange~sex,dat) # fit the model
+summary(fit) # model summary
+coef(fit) # extract estimated coefficients
+```
+
+The estimate of the intercept is `r round(coef(fit)[1],3)` and the effect of sex is 
+ `r round(coef(fit)[2],3)`.
+Notice the name of the effect of sex is called `sexmale`.
+This is the effect of being male on home range size.
+The intercept represents the expected home range of a female bear.
+The expected home range of a male bear is then `r round(coef(fit)[1],3)`+ `r round(coef(fit)[2],3)` =
+ `r round(coef(fit)[1],3) + round(coef(fit)[2],3)` km, given this model.
+Recall we were interested in whether female bears had a larger or smaller home range.
+While you can evaluate with the model we fit, switching the order so male is the first level
+ and would therefore be the intercept, would make sense.
+The second estimated coefficient is then the effect of being female.
+To do this we need to reorder the factor levels in R which can be done with the `factor()` function.
+
+```{r}
+dat$sex<- factor(dat$sex,levels=c("male","female")) # reorder factor levels
+``` 
+ 
+Now let's refit the same model and see what happens now.
+
+```{r}
+fit<- lm(homerange~sex,dat)
+summary(fit) # model summary
+coef(fit) # estimated coefficients
+```
+
+Now the expected homerange for a male bear is the intercept and a female bear is `r round(coef(fit)[1],3)`+ `r round(coef(fit)[2],3)` =
+ `r round(coef(fit)[1],3) + round(coef(fit)[2],3)` km, given this model.
+Compare the expected home range for a female bear with the intercept for the first model fit, the are
+ the same.
+Formally, the model estimates 3 parameters:
+
+* $\beta_{0}$ = `r round(coef(fit)[1],3)`; this is the average home range of a male bear
+* $\beta_{1}$ = `r round(coef(fit)[2],3)`the effect of being a female on home range
+* $\sigma$ = `r round(summary(fit)$sigma,3)`residual standard error
+
+Ok, now we also suspect there is an effect of weight on home range, larger bears have large home
+ ranges.
+The effect of weight can be evaluated by adding weight to the linear model.
+The model parameters for this model are the same as before but there is a new parameter estimated,
+ $\beta_{2}$ which is the effect of weight on home range.  
+Let's fit the model.
+
+```{r}
+fit<-lm(homerange~sex+weight,dat)
+summary(fit)
+coef(fit)
+```
+
+Well I'll be the model fits pretty well.
+The r-squared value is `r summary(fit)$r.squared` which is pretty good for ecological data, right?
+Either way the parameter estimates for the model are:
+
+* $\beta_{0}$ = `r round(coef(fit)[1],3)`; this is the average home range of a male bear
+* $\beta_{1}$ = `r round(coef(fit)[2],3)`the effect of being a female on home range
+* $\beta_{2}$ = `r round(coef(fit)[3],3)`the effect of weight on home range
+* $\sigma$ = `r round(summary(fit)$sigma,3)`residual standard error
+
+Neat, we have fit a model that estimates home range given bear sex and weight.
+We can use the model to predict home ranges for male and female bears of varying weights.
+Let's do that and see how good our model works, the anticipation is killing me!
+First we need a dataset of male and female bears to predict for.
+Bear weights vary from `r min(dat$weight)` to `r max(dat$weight)` and therefor we should predict
+ between those values.
+Above or below those values you are getting into the realm of extrapolation.
+
+```{r}
+newdat<- data.frame(weight=seq(min(dat$weight), max(dat$weight),1))
+head(newdat)
+```
+
+But wait, don't we need sex in the `data.frame` too?
+Right you are, let's add it.
+We can do this by 
+
+```{r}
+newdat$sex<-"male"
+preddat<- newdat
+newdat$sex<-"female"
+preddat<- rbind(preddat,newdat)
+```
+
+Let's double check the data to make sure it is formatted correctly.
+
+```{r}
+str(preddat)
+```
+
+Hmmmm, that is not quite right.
+Sex is a character, it should be a factor.
+Let's fix that.
+
+```{r}
+preddat$sex<- factor(preddat$sex,levels=c("male","female"))
+levels(preddat$sex)
+```
+ 
+Ok, that looks better, especially the ordering of the levels.
+Now back to the fun stuff, let's get predicting with teh `predict()` function.
+
+```{r}
+preddat$homerange_hat<- predict(fit,preddat)
+head(preddat)
+```
+Now we can plot the predictions.
+
+```{r}
+plot(homerange_hat~weight,preddat,type='n',xlab="Weight",ylab="Home range (km)")
+points(homerange_hat~weight,preddat,subset=sex=="male",type='l',lty=1)
+points(homerange_hat~weight,preddat,subset=sex=="female",type='l',lty=2)
+legend('topleft',legend=c("Males","Female"),pch=c(1,2))
+```
+
+Ok, I am not a rocket surgeon, but that does not seem right, how can home ranges be negative?
+Let's plot it with the original data.
+
+
+```{r}
+plot(homerange~weight,dat,type='n',xlab="Weight",ylab="Home range (km)",ylim=c(-1,10))
+points(homerange~weight,dat,subset=sex=="male",pch=1)
+points(homerange~weight,dat,subset=sex=="female",pch=2)
+
+points(homerange_hat~weight,preddat,subset=sex=="male",type='l',lty=1)
+points(homerange_hat~weight,preddat,subset=sex=="female",type='l',lty=2)
+legend('topleft',legend=c("Males","Female"),pch=c(1,2))
+```
+
+That is a terrible fit.
+But, the r-squared value was `r summary(fit)$r.squared`?
+I probably should have looked at the data first, but that is part of the point of this example.
+There are a couple of things that might be going on here.
+First, the distribution could be wrong.
+That data does not look all the normally distributed.
+Second, the model could be wrong and home ranges are not linearly related to sex and weight.
+We can evaluate these 2 problems with plots of residuals versus predicted to evaluate distribution
+ and observed versus predicted values to evaluate if the model is misspecified.
+Here we go.
+
+```{r}
+dat$resids<-resid(fit)
+dat$preds<-fitted(fit)
+
+# plot of residuals versus predicted
+# should be normal and centered around 0
+plot(resids~preds,dat)
+abline(h=0)
+```
+
+Well that does not good at all.
+The residuals are not centered around 0, the model tends to over predict at low values, under
+ predict at intermediate values, and over predict at high values.
+ 
+
+```{r}
+# plot of observed versus predicted
+# should fall on a 1:1 line
+plot(homerange~preds,dat)
+abline(0,1)
+```
+
+That does not look good at all either.
+The model appears to be misspecified and some unaccounted for curvature in the model.
+Let's tackle the distribution issue to see if that fixes things.
+
+### Messing with the distribution
+
+Some cool kids told me that a Poisson might be the way to go because it models things 0 or greater.
+Home ranges are greater than 0 and it makes good sense to not let home range dip below 0.
+A linear model with a Poisson distribution can be fit using the `glm()` function.
+The syntax is similar to the `lm()` function.
+
+```{r}
+fit<- glm(homerange~sex+weight,dat, family="poisson")
+```
+
+What is going on with the warnings?
+That does not give me a warm fuzzy feeling about my analysis.
+Let's see if the model was actually fit.
+
+```{r}
+summary(fit)
+```
+
+Well there are estimates for the various parameters of the model.
+Let's be diligent and check the assumptions and make sure things are ok with our assumptions.
+I will start with the plot of resdisuals versus predicted values. 
+
+```{r}
+plot(resid(fit)~fitted(fit))
+```
+
+I don't know much, but that *does* not look good.
+Or maybe it does?
+The variance of the Poisson is the mean so you would expect some fanning of residuals as the home range increases.
+
+Now, I hope the model is not misspecified.
+I will evaluate that by looking at a plot of observed versus the fitted values
+
+```{r}
+dat$pred<- predict(fit,dat)
+plot(homerange~pred,dat)
+abline(0,1)
+```
+That model fit is atrocious.
+What is going on with the predictions?
+Why are they negative?
+Well it turns out that the `glm()` function uses a log link to model the response.
+So the predictions are on log scale and we need to transform them back to home ranges.
+The `predict()` function does this by specifying the `type='response'` argument.
+The defaulat is `type='link'`
+
+```{r}
+dat$pred<- predict(fit,dat,type='response')
+plot(homerange~pred,dat)
+abline(0,1)
+```
+That looks a whole lot better.
+But I am still a concerned about all the warnings that happened during the model fitting.
+What is up with those. 
+Let's look at our data again.
+
+```{r}
+head(dat)
+```
+
+Ohhh, I think I see it.
+The Poisson distribution is only good for integers and home range is continuous.
+I wonder what happens is I round my homeranges to the nearest whole number and coerce it to an integer.
+
+```{r}
+dat$hr_int<- as.integer(round(dat$homerange,0))
+```
+
+Now let's refit the model and see if the warnings persist.
+
+```{r}
+fit<- glm(hr_int~sex+weight,dat, family="poisson")
+```
+Awesome sauce, no warnings!
+
+<IMG SRC="figures/awesome-sauce.jpg" ALIGN="right" width=25%/>
+
+* look at data, got some 0s
+* can rescale to get integers
+* what about over dispersion?
+* log link -> log normal
+* Model selection
+
 ### Misconceptions and assumptions
 
 Couple of common misconceptions I have run into in the understanding of linear models
@@ -122,25 +370,17 @@ These assumptions can be evaluated by visually inspecting the following plots
 1. Plot of response variable (_y_-axis) to predicted variables (_x_-axis)
 2. Plot of residuals (_y_-axis) to predicted variables (_x_-axis)
 
-### Fitting and interpreting the model
 
-The model can be fit by the 'lm()' function in R using the code below.
-
-```{r}
-fit<-lm(homerange~sex+weight,mydat)
-summary(fit) # summary of linear model fit
-confint(fit) # 95% confidence intervals for parameter estimates
-```
 Now that we have a fitted model we can evaluate the assumptions.
 It is usually best to do this before looking at the output.
 R has some built in plots that can be viewed using the code `plot(fit)` but I prefer to do a couple
  of simple plots to assess model assumptions.
 
 ```{r}
-mydat$pred<- fitted(fit) # add predictions to dataset
-mydat$resid<- resid(fit) # add residuals to dataset
-plot(homerange~pred,mydat)
-plot(resid~pred,mydat)
+dat$pred<- fitted(fit) # add predictions to dataset
+dat$resid<- resid(fit) # add residuals to dataset
+plot(homerange~pred,dat)
+plot(resid~pred,dat)
 ```
 
 # Distribution-normal, lognormal, and poisson
@@ -174,28 +414,3 @@ Using the code below you can see that true model that generated the dataset was 
 Ideally, model parameter estimates are the same as those used to generate the data, at least close.
 Additionally, the model selection should weight the generating model relatively high relative to
  competing models.
-
-```{r}
-mydat<-data.frame(
-    sex=c(rep("female",35),rep("male",43),
-    weight=runif(35+43,68,158))
-b0<-
-b1<-
-b2<-
-b3<-
-er<- 0.3
-
-mydat$sex<-factor(mydat$sex, levels=c("male","female"))
-# model matrix
-mm<- model.matrix(~sex+weight+sex:weight,mydat)
-
-mydat$homerange<- mm%*% as.vector(b0,b1,b2,b3)
-mydat$homerange<- mydat$homerange+rnorm(35+43,0,er)
-
-
-
-mydat$homerange<- NA
-mydat[mydat$sex=="male",]$homerange<- b0 + b3*
-mydat[mydat$sex=="female",]$homerange
-
-```
