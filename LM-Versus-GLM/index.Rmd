@@ -289,7 +289,7 @@ summary(fit)
 
 Well there are estimates for the various parameters of the model.
 Let's be diligent and check the assumptions and make sure things are ok with our assumptions.
-I will start with the plot of resdisuals versus predicted values. 
+I will start with the plot of residuals versus predicted values. 
 
 ```{r}
 plot(resid(fit)~fitted(fit))
@@ -320,10 +320,12 @@ dat$pred<- predict(fit,dat,type='response')
 plot(homerange~pred,dat)
 abline(0,1)
 ```
+
 That looks a whole lot better.
 But I am still a concerned about all the warnings that happened during the model fitting.
 What is up with those. 
 Let's look at our data again.
+
 
 ```{r}
 head(dat)
@@ -331,7 +333,8 @@ head(dat)
 
 Ohhh, I think I see it.
 The Poisson distribution is only good for integers and home range is continuous.
-I wonder what happens is I round my homeranges to the nearest whole number and coerce it to an integer.
+I wonder what happens is I round my home ranges to the nearest whole number and coerce it to an integer.
+
 
 ```{r}
 dat$hr_int<- as.integer(round(dat$homerange,0))
@@ -339,18 +342,88 @@ dat$hr_int<- as.integer(round(dat$homerange,0))
 
 Now let's refit the model and see if the warnings persist.
 
+
 ```{r}
 fit<- glm(hr_int~sex+weight,dat, family="poisson")
 ```
 Awesome sauce, no warnings!
-
 <IMG SRC="figures/awesome-sauce.jpg" ALIGN="right" width=25%/>
+It is always good to look at the model residuals
+ and model fit.
+ 
+```{r}
+dat$resid<-resid(fit)
+dat$pred<-exp(fitted(fit))# response link
+plot(hr_int~pred,dat)
+abline(0,1)
+```
+The plot of observed versus predicted looks
+ pretty good if you exclude values greater
+ than 200.
+It looks linear which is what we want.
+Now let's look at the residuals.
+
+```{r}
+plot(resid~pred,dat)
+
+```
+
+Ummm, that looks weird.
+First there are some home ranges that are
+ predicted to be 0, or at least close to it.
+Second, what is up with the extreme residuals?
+Maybe a Poisson was not a great idea.
+Let's go back and look at the data.
+Recall we coerced home range from a numeric
+ to an integer.
+Maybe that hand an unintended consequence.
+Let's look at the first 10 lines of the data.
+
+
+```{r}
+head(dat,10)
+```
+Recall we rounded `homerange` to the nearest
+ integer and then coerced that value to an 
+ integer `hr_int`.
+Well that did have an unexpected effect.
+There are many home ranges that are 0.
+That seems biologically improbable for living
+ bears.
+
+ 
+What can we do?
+Well we can maybe convert home ranges to a
+ number that is less likely to round to 0.
+For example we can convert square km to square
+ m and then round those values to get whole
+ numbers so the Poisson does not yell at us
+ and throw a bunch of warnings again.
+Let's go for it and see what happens.
+
+```{r}
+dat$hr_mm<-dat$homerange*1000000
+```
+fit<-glm(hr_mm~sex+weight,dat,family="poisson")
+
+
+
+
+```{r}
+
+```
+
+
 
 * look at data, got some 0s
 * can rescale to get integers
 * what about over dispersion?
 * log link -> log normal
 * Model selection
+
+
+
+
 
 ### Misconceptions and assumptions
 
