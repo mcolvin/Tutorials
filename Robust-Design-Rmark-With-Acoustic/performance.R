@@ -71,7 +71,8 @@ for(ii in start:150)
 	f0<- list(formula=~acoustic+session)
 	GammaDoublePrime=list(formula=~1)
 	GammaPrime=list(formula=~1)
-	fit_acoustic<-mark(data = rd_acoustic, 
+	fit_acoustic<-mark(data = rd_acoustic,
+        dll=rd_acoustic_ddl,
 		model = "Robust", 
 		time.intervals=time.intervals,
 		model.parameters=list(
@@ -86,7 +87,8 @@ for(ii in start:150)
 
 
 	p=list(formula=~1,share=TRUE)
-	fit_pit<-mark(data = rd_pit, 
+	fit_pit<-mark(data = rd_pit,
+        dll = rd_pit_ddl,
 		model = "Robust", 
 		time.intervals=time.intervals,
 		model.parameters=list(
